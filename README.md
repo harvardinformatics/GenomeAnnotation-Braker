@@ -5,7 +5,22 @@
 When RNA-seq data are provided to BRAKER, it  has an option for predicting UTR portions of gene models. However, t is still viewed by its developers as "experimental". Furthermore, in initial testing, we discovered that, paradoxically, when running BRAKEr with UTR prediction, for some species it would predict far fewer CDS transcripts, leading to a non-trivial reduction in BUSCO recovery. Thus, in our evaluation, we do not implement UTR prediction.
 
 ## Singularity container
-To aid users of Harvard's Odyssey HPC cluster, and because successfully building Braker with all the required dependencies can be challenging, we run Braker using a singularity image. Instructions for how to build the Braker singularity image ... coming soon!
+To aid users of Harvard's Cannon HPC cluster, and because successfully building Braker with all the required dependencies can be challenging, we run Braker using a Singularity image.
+
+To build the Singularity image:
+
+1. Clone this git repository
+2. Register for GeneMark-ES/ET/EP (LINUX 64 kernel 3.10 - 5) at http://exon.gatech.edu/GeneMark/license_download.cgi 
+
+    *NOTE: the license key expires after 400 days*
+2. Download the genemark tarball (gmes_linux_64_4.tar.gz) and 64-bit license key (gm_key_64.gz) into the same directory as the same directory as the Singularity definition file (singularity.def) in this repository:
+
+    curl -LO http://topaz.gatech.edu/GeneMark/tmp/GMtool_RANDOM_STRING/gmes_linux_64_4.tar..gz
+
+    curl -LO http://topaz.gatech.edu/GeneMark/tmp/GMtool_RANDOM_STRING/gm_key_64.gz
+3. Build the Singularity image:
+
+   sudo singularity build Braker.sif singularity.def
 
 ## Pre-processing input files
 In general, when Braker is provided fasta files that have more than one space-separated field in the header, it issues warning saying it may not work correctly in downstream steps. Therefore, we "clean" the headers of all genome and protein fasta files prior to use,simply by removing everything after the 1st field (which is usually the sequence name). In cases where a fasta file requires concatenation of more than one header field to provide the correct sequence name, custom tweaking of the below one-off awk command will be necessary:

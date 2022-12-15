@@ -1,0 +1,36 @@
+Bootstrap: docker
+From: quay.io/biocontainers/braker2:2.1.6--hdfd78af_5
+
+# Register for & download GeneMark-ES/ET/EP at http://exon.gatech.edu/GeneMark/license_download.cgi
+%files
+    ./gmes_linux_64_4.tar.gz
+    ./gm_key_64.gz
+
+%environment
+    export PATH=/opt/gmes_linux_64_4/ProtHint/bin/:${PATH}
+    export AUGUSTUS_SCRIPTS_PATH=/usr/local/bin
+    export AUGUSTUS_BIN_PATH=/usr/local/bin
+    export GENEMARK_PATH=/opt/gmes_linux_64_4
+    export ALIGNMENT_TOOL_PATH=/usr/local/bin/
+
+%post
+    readonly GENEMARK_TMP_URL_SUBPATH= # e.g., Gmtool_abcdef
+    set -o pipefail -o errexit
+    mkdir /opt/gm_key
+
+    tar -C /opt -xzf /gmes_linux_64_4.tar.gz
+    gzip -dc < /gm_key_64.gz > /opt/gm_key/.gm_key
+    cd /opt/gmes_linux_64_4
+    perl change_path_in_perl_scripts.pl "/usr/bin/env perl"
+
+    rm /gmes_*gz
+
+%runscript
+    exec braker.pl "$@"
+
+%labels
+    org.opencontainers.image.url     https://github.com/harvardinformatics/GenomeAnnotation-Braker
+
+%help
+    singularity exec <SINGULARITY_IMAGE>.sif cp -Rs /usr/local/config augustus_config
+    singularity run --no-home --home /opt/gm_key --cleanenv --env AUGUSTUS_CONFIG_PATH=${PWD}/augustus_config <SINGULARITY_IMAGE>.sif [braker.pl options...]
