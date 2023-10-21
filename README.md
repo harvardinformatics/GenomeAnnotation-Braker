@@ -59,6 +59,27 @@ singularity exec --no-home \
                  --softmasking 
 ```
 
-### General cautionary notes
+## Filtering BRAKER annotations
+Whether using protein or RNA-seq alignments as evidence, BRAKER ultimately runs AUGUSTUS, and the resulting predictions have varying levels of support from splice hint evidence. Following [guidance](https://github.com/Gaius-Augustus/BRAKER/issues/319#issuecomment-777078174) from one of the BRAKER developers, We use [selectSupportedSubsets.py](https://github.com/Gaius-Augustus/BRAKER/blob/report/scripts/predictionAnalysis/selectSupportedSubsets.py), a script on the *report* branch of the BRAKER repository, to generate three separate gtf files:
+* annotations with no evidence support
+* the union of annotations that are partially and fully supported
+* only annotations that are fully supported by the evidence.
+
+This script is run as follows:
+
+```
+python selectSupportedSubsets.py augustus.hints.gtf hintsfile.gff --fullSupport outfile_fullsupport.gtf --anySupport outfile_anysupport.gtf --noSupport outfile_nosupport.
+``` 
+
+where the first two arguments are positional arguments for BRAKER outfiles and the following three keyword arguments are for user-specified names of outfiles for the annotation files with specified levels of support.
+
+
+Annotations with no support will likely be dominated by false positives. Depending upon the nature of the downstream analysis, whether to include partially supported annotations is at the researcher's discretion. In our experience, filtering out partially supported annotations can also lead to the loss of a small number of conserved single-copy orthologs (BUSCOs); it is reasonable to assume that some fraction of annotations representing less conserved sequences will also get filtered out.   
+
+
+To filter out annotations that do not achieve the desired level of support, we have written [FilterOutUnsupportedBrakerAugustusAnnotations.p](https://github.com/harvardinformatics/GenomeAnnotation-Braker/blob/main/utilities/FilterOutUnsupportedBrakerAugustusAnnotations.py). This script takes as keyword arguments either the gtf files produced above with any support or full support, the original *braker.gtf* file, and an output file name for the filtered. This script produces a filtered version of the original *braker.gtf*, which is necessary because formatting for the gtf files produced by *selectSupportedSubsets.py* is slightly different and creates complications for downstream analysis. 
+
+
+## General cautionary notes
 Particular features of braker outputs may lead to idisyncratic and undesireable behavior for downstream tools utilizing the braker annotation. A few that we have detected are as follows:
 * Braker annotations come from AUGUSTUS and GeneMark. For single-exon gene, GeneMark does not appear to generate features of the type "exon", only "transcript" and "CDS" features. As a result, tool that extract nucleotide sequences based upon exon features (and their parent "transcript" features) will fail to report these. RSEM falls into this category.
